@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-#from datetime import datetime
 
 def monitor():
     df = pd.read_csv("merge.csv", sep="_")
@@ -18,56 +17,50 @@ def firesNotInHistory():
     df = pd.read_csv("merge.csv", sep="_")
     df = df[df['_merge'] == 'left_only']
     casosPresentados = df.shape[0]
-    print(f"se han presentado un total de {casosPresentados} casos de fuegos sin historial")
-    df.to_csv("NotInHistory.csv", sep="_")
-    return df
+    return df, casosPresentados
 
 def historyNotInFires():
     df = pd.read_csv("merge.csv", sep="_")
     df = df[df['_merge'] == 'right_only']
     casosPresentados = df.shape[0]
-    return df
-    #print(f"se han presentado un total de {casosPresentados} casos de historial sin fuegos")
+    return df, casosPresentados
 
 def fireInHistory():
     df = pd.read_csv("merge.csv", sep="_")
     df = df[df['_merge'] == "both"]
     casosPresentados = df.shape[0]
-    return df
-    #print(f"la cantidad de fuegos con historial es de {casosPresentados}")
+    return df, casosPresentados
 
-def reportBank():
-    df = pd.read_csv("merge.csv", sep="_")
-    withReport = fireInHistory()
-    noReport = firesNotInHistory()
+def reportBank(firesInHistory, firesNotInHistory):
+    withReport = firesInHistory
+    noReport = firesNotInHistory
     
-    systemList = [x.replace("'", "\"") for x in df["system"].tolist()]
+    systemList = [x.replace("'", "\"") for x in withReport["system"].tolist()]
     diccionario = {i: json.loads(x) for i, x in enumerate(systemList)}
     dfNombres = pd.DataFrame.from_dict(diccionario, orient="index")
-    uniqueKeys = dfNombres.drop_duplicates(subset=["api_key"])[["api_key", "system_name"]]
     
-    mergeInHistory = withReport.merge(uniqueKeys, left_on='bank', right_on='api_key', how='left')
-    mergeNotInHistory = noReport.merge(uniqueKeys, left_on='bank', right_on='api_key', how='left')
+    systemListNoReport = [x.replace("'", "\"") for x in noReport["system"].tolist()]
+    diccionarioNoReport = {i: json.loads(x) for i, x in enumerate(systemListNoReport)}
+    dfNombresNoReport = pd.DataFrame.from_dict(diccionarioNoReport, orient="index")
     
-    countsIn = mergeInHistory['system_name'].value_counts()
-    countsNotIn = mergeNotInHistory['system_name'].value_counts()
+    countsIn = dfNombres['system_name'].value_counts()
+    countsNotIn = dfNombresNoReport['system_name'].value_counts()
     
-    print(f"Lista de incendios con reporte por cada banco:\n {countsIn}")
-    print(f"Lista de incendios sin reporte por cada banco:\n {countsNotIn}")
-    print(noReport.bank)
+    print(f"Lista de incendios con historial por cada banco:\n{countsIn}\n")
+    print(f"Lista de incendios sin historial por cada banco:\n{countsNotIn}\n")
 
-def msjPromedio():
+def msjPromedio(firesInHistory):
     numeroMsg = []
-    df = fireInHistory()
+    df = firesInHistory
     for element in df["events"]:
         count = element.count("state")
         numeroMsg.append(count)
     promedio = sum(numeroMsg)/len(numeroMsg)
-    print(f"el promedio de mensajes por reporte es de {promedio:.2f}")
+    print(f"El promedio de mensajes por reporte es de {promedio:.2f}\n")
 
-def promOpenClose():
+def promOpenClose(firesInHistory):
     tiempoProm = []
-    df = fireInHistory()
+    df = firesInHistory
     df["timestamp_open"]=pd.to_datetime(df["timestamp_open"])
     df["timestamp_close"]=pd.to_datetime(df["timestamp_close"])
     for open, close in zip(df["timestamp_open"], df["timestamp_close"]):
@@ -77,7 +70,7 @@ def promOpenClose():
     promedio = tiempoProm.mean()
     strPromedio = str(promedio)
     strPromedio = strPromedio.split(".")
-    print(f"el tiempo promedio entre apertura y cierre es de {strPromedio[0]}")
+    print(f"El tiempo promedio entre apertura y cierre es de {strPromedio[0]}\n")
 
 def reportDispatcher():
     resultados = []
@@ -86,36 +79,42 @@ def reportDispatcher():
     for diccionario in resultados:
         for clave, valor in diccionario.items():
             if clave == True:
-                print(f"Reportes de despacho son: {valor}")
+                print(f"Reportes de despacho: {valor}.\n")
             elif clave == False:
-                print(f"Reportes que no son de despacho son: {valor}")
+                print(f"Reportes que no son de despacho: {valor}.")
             else :
-                print(f"Reportes sin información son: {valor}")
-    
+                print(f"Reportes sin información: {valor}.")
+
 def reportForOperator():
     df = pd.read_csv("merge.csv", sep="_")
-    print(df["operator"].value_counts())
-    
+    lista = df.groupby("operator").count()
+    print(f"Lista de reportes por operador\n{lista.fire_x}\n")
+
 def reportNotInternalId():
     df = pd.read_csv("merge.csv", sep="_")
     count = df["internal_id"].isna().sum()
-    print(df["internal_id"].value_counts(dropna=False))
-    print(F"la cantidad de reportes sin Id interno es de {count}")
+    #print(df["internal_id"].value_counts(dropna=False))
+    print(f"la cantidad de reportes sin Id interno es de {count}\n")
 
-def poolForDispatcher():
-    df = fireInHistory()
+def poolForDispatcher(firesInHistory):
+    df = firesInHistory
     agrupado = df.groupby("dispatcher").count()
-    print(agrupado)
+    print(f"Lista de historial por despachador\n{agrupado.id}\n")
 
 
-#monitor()
-#reportBank()
-#fireInHistory()
-#firesNotInHistory()
-#historyNotInFires()
-#msjPromedio()
-#promOpenClose()
-#reportDispatcher()
-#reportForOperator()
-#reportNotInternalId()
-#poolForDispatcher()
+# monitor()
+dfFireInHistory, countFireInHistory = fireInHistory()
+dfFireNotInHistory, countFireNotInHistory = firesNotInHistory()
+dfHistoryNotInFire, countHistoryNotInFire = historyNotInFires()
+
+print (f"La cantidad de fuegos con historial es de {countFireInHistory}.")
+print(f"La cantidad de fuegos sin historial es de {countFireNotInHistory}.")
+print(f"La cantidad de Historial sin fuegos es de {countHistoryNotInFire}.\n")
+reportNotInternalId()
+promOpenClose(dfFireInHistory)
+reportDispatcher()
+msjPromedio(dfFireInHistory)
+
+reportBank(dfFireInHistory, dfFireNotInHistory)
+reportForOperator()
+poolForDispatcher(dfFireInHistory)

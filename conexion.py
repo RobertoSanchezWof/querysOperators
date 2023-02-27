@@ -2,8 +2,6 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 import pandas as pd
-import copy
-
 
 cred = credentials.Certificate('./credenciales/firebase.json')
 firebase_admin.initialize_app (cred)
@@ -28,5 +26,4 @@ def extrae_datos():
     dfFires.to_csv("fires.csv", sep="_")
     dfHistory.to_csv("history.csv", sep="_")
     
-
 extrae_datos()
