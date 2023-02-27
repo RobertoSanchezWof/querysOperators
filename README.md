@@ -1,8 +1,7 @@
-# instrucciones de uso
+# Instrucciones de uso
 
-Para extraer data de firebase ejecuta en tu compilador de código el archivo conexion.py el cual extraerá información desde el 1 de febrero del 2023 hasta la fecha actual
-generando asi 2 archivos fires.csv y history.csv, la data ya esta incluida en el archivo plataforma operadores.zip la cual hay que descomprimir en el mismo lugar donde están  conexion.py y leercsv.py para su inmediata lectura.
-Para hacer las consultas a la data extraída ejecutar el archivo leercsv.py, la información entregada esta separada por funciones: 
+        Para extraer data de firebase ejecuta en tu compilador de código el archivo conexion.py el cual extraerá información desde el 1 de febrero del 2023 hasta la fecha actual generando asi 2 archivos fires.csv y history.csv, la data ya esta incluida en el archivo plataforma operadores.zip la cual hay que descomprimir en el mismo lugar donde están conexion.py y leercsv.py para su inmediata lectura.
+        Para hacer las consultas a la data extraída ejecutar el archivo leercsv.py, la información entregada esta separada por funciones: 
 
 1. fireInHistory: Entrega los incendios que si tienen historial asociado.
 2. firesNotInHistory: Entrega los incendios que no tienen historial asociado.
