@@ -2,36 +2,42 @@ import pandas as pd
 import json
 
 def monitor():
-    df = pd.read_csv("merge.csv", sep="_")
+    '''Imprime 20 filas del merge'''
+    df = pd.read_csv("data/merge.csv", sep="_")
     for x in list(df.columns):
         print(df[x].head(20))
 
-def merge():
+def merge() :
+    '''Une la data de Fire y History por el ID del incendio, lo guarda como CSV'''
     fire = pd.read_csv("fires.csv", sep="_")
     history = pd.read_csv("history.csv", sep="_")
     dfMerge = pd.merge(fire, history, how='left', left_on='id', right_on='fire', indicator=True)
-    dfMerge.to_csv("merge.csv", sep="_")
+    dfMerge.to_csv("data/merge.csv", sep="_")
     print(dfMerge)
 
 def firesNotInHistory():
-    df = pd.read_csv("merge.csv", sep="_")
+    '''Devuelve los datos que no posean registro. Y la cantidad de estos'''
+    df = pd.read_csv("data/merge.csv", sep="_")
     df = df[df['_merge'] == 'left_only']
     casosPresentados = df.shape[0]
     return df, casosPresentados
 
 def historyNotInFires():
-    df = pd.read_csv("merge.csv", sep="_")
+    '''Devuelve los datos que no poseen indendios. Y su cantidad.'''
+    df = pd.read_csv("data/merge.csv", sep="_")
     df = df[df['_merge'] == 'right_only']
     casosPresentados = df.shape[0]
     return df, casosPresentados
 
 def fireInHistory():
-    df = pd.read_csv("merge.csv", sep="_")
+    '''Devuelve los incendios que si poseen reporte, y su cantidad.'''
+    df = pd.read_csv("data/merge.csv", sep="_")
     df = df[df['_merge'] == "both"]
     casosPresentados = df.shape[0]
     return df, casosPresentados
 
-def reportBank(firesInHistory, firesNotInHistory):
+def reportBank(firesInHistory: pd.DataFrame, firesNotInHistory: pd.DataFrame):
+    '''Entrega la informacion de los incendios y reportes agrupados por banco'''
     withReport = firesInHistory
     noReport = firesNotInHistory
     
@@ -49,7 +55,8 @@ def reportBank(firesInHistory, firesNotInHistory):
     print(f"Lista de incendios con historial por cada banco:\n{countsIn}\n")
     print(f"Lista de incendios sin historial por cada banco:\n{countsNotIn}\n")
 
-def msjPromedio(firesInHistory):
+def msjPromedio(firesInHistory: pd.DataFrame):
+    '''Promedia el numero de mensajes por reporte.'''
     numeroMsg = []
     df = firesInHistory
     for element in df["events"]:
@@ -58,7 +65,8 @@ def msjPromedio(firesInHistory):
     promedio = sum(numeroMsg)/len(numeroMsg)
     print(f"El promedio de mensajes por reporte es de {promedio:.2f}\n")
 
-def promOpenClose(firesInHistory):
+def promOpenClose(firesInHistory: pd.DataFrame):
+    '''Promedia el tiempo entre que se abre y cierra un reporte'''
     tiempoProm = []
     df = firesInHistory
     df["timestamp_open"]=pd.to_datetime(df["timestamp_open"])
@@ -73,8 +81,9 @@ def promOpenClose(firesInHistory):
     print(f"El tiempo promedio entre apertura y cierre es de {strPromedio[0]}\n")
 
 def reportDispatcher():
+    '''Muestra los reportes que han sido despachados (JSON Uruguay)'''
     resultados = []
-    df = pd.read_csv("merge.csv", sep="_")
+    df = pd.read_csv("data/merge.csv", sep="_")
     resultados.append(df["json_sended"].value_counts(dropna=False))
     for diccionario in resultados:
         for clave, valor in diccionario.items():
@@ -86,17 +95,20 @@ def reportDispatcher():
                 print(f"Reportes sin información: {valor}.")
 
 def reportForOperator():
-    df = pd.read_csv("merge.csv", sep="_")
+    '''Reportes agrupados por operador.'''
+    df = pd.read_csv("data/merge.csv", sep="_")
     lista = df.groupby("operator").count()
     print(f"Lista de reportes por operador\n{lista.fire_x}\n")
 
 def reportNotInternalId():
-    df = pd.read_csv("merge.csv", sep="_")
+    '''Numero de reportes sin ID interno'''
+    df = pd.read_csv("data/merge.csv", sep="_")
     count = df["internal_id"].isna().sum()
     #print(df["internal_id"].value_counts(dropna=False))
     print(f"la cantidad de reportes sin Id interno es de {count}\n")
 
-def poolForDispatcher(firesInHistory):
+def poolForDispatcher(firesInHistory : pd.DataFrame):
+    '''Numero de reportes por despachador.'''
     df = firesInHistory
     agrupado = df.groupby("dispatcher").count()
     print(f"Lista de historial por despachador\n{agrupado.id}\n")
