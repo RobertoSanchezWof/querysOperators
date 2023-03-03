@@ -68,18 +68,28 @@ def msjPromedio(firesInHistory: pd.DataFrame):
     promedio = sum(numeroMsg)/len(numeroMsg)
     print(f"El promedio de mensajes por reporte es de {promedio:.2f}\n")
 
-def funcion(x):
+# Funcion para extraer los numeros de la variable "time" usando regex.
+# Ej:
+# {'system_detection': False, 'ti2023, 2, 1, 0, 41, 'time': DatetimeWithNanoseconds(2023, 2, 1, 0, 41, 48, tzinfo=datetime.timezone.utc), 'log_time': DatetimeWithNanoseconds(2023, 2, 1, 0, 42, 4, tzinfo=datetime.timezone.utc), 'online_time': DatetimeWithNanoseconds(2023, 2, 1, 0, 42, 11, 887204, tzinfo=datetime.timezone.utc), 'atime': DatetimeWithNanoseconds(2023, 2, 1, 0, 40, 8, tzinfo=datetime.timezone.utc)}
+def time(x):
+    import re
+    results = re.findall(r"'time': DatetimeWithNanoseconds\((.*?), tzinfo=datetime.timezone.utc\)", x)
+    # results = [datetime.strptime(x, '%Y, %m, %d, %H, %M, %S') for x in results]
+    print(results[0])
+    return results
+
+
+def funcion(x:str)->datetime:
     print(x)
-    data = ast.literal_eval(x)
-    for key in data:
-        if isinstance(data[key], DatetimeWithNanoseconds):
-            data[key] = datetime.fromtimestamp(data[key].timestamp())
+    data = ''
     return data
 
 def promReactionOpen(firesInHistory: pd.DataFrame):
     """promedia el tiempo de reacción entre detección y apertura """
     df = firesInHistory
-    df["times"].apply(lambda x: print (dict(x)))
+    datetime(2023, 2, 1, 0, 41, 48)
+    
+    df["times"].apply(lambda x: time (x))
     #diccionario = df["times"].to_dict()
     #df['times'] = df['times'].apply(lambda x: ast.literal_eval(x))
     #df['times'] = df['times'].apply(lambda x: pd.Series(json.loads(x)).to_dict())
