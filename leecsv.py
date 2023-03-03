@@ -1,5 +1,8 @@
 import pandas as pd
 import json
+import ast
+from datetime import datetime
+
 
 def monitor():
     '''Imprime 20 filas del merge'''
@@ -23,7 +26,7 @@ def firesNotInHistory():
     return df, casosPresentados
 
 def historyNotInFires():
-    '''Devuelve los datos que no poseen indendios. Y su cantidad.'''
+    '''Devuelve los datos que no poseen incendios. Y su cantidad.'''
     df = pd.read_csv("data/merge.csv", sep="_")
     df = df[df['_merge'] == 'right_only']
     casosPresentados = df.shape[0]
@@ -37,7 +40,7 @@ def fireInHistory():
     return df, casosPresentados
 
 def reportBank(firesInHistory: pd.DataFrame, firesNotInHistory: pd.DataFrame):
-    '''Entrega la informacion de los incendios y reportes agrupados por banco'''
+    '''Entrega la información de los incendios y reportes agrupados por banco'''
     withReport = firesInHistory
     noReport = firesNotInHistory
     
@@ -65,20 +68,44 @@ def msjPromedio(firesInHistory: pd.DataFrame):
     promedio = sum(numeroMsg)/len(numeroMsg)
     print(f"El promedio de mensajes por reporte es de {promedio:.2f}\n")
 
+def funcion(x):
+    print(x)
+    data = ast.literal_eval(x)
+    for key in data:
+        if isinstance(data[key], DatetimeWithNanoseconds):
+            data[key] = datetime.fromtimestamp(data[key].timestamp())
+    return data
+
+def promReactionOpen(firesInHistory: pd.DataFrame):
+    """promedia el tiempo de reacción entre detección y apertura """
+    df = firesInHistory
+    df["times"].apply(lambda x: print (dict(x)))
+    #diccionario = df["times"].to_dict()
+    #df['times'] = df['times'].apply(lambda x: ast.literal_eval(x))
+    #df['times'] = df['times'].apply(lambda x: pd.Series(json.loads(x)).to_dict())
+    #systemList = [x.replace("'", "\"") for x in df["times"].tolist()]
+    #diccionario = json.dumps(systemList)
+    #dfTimes = pd.read_json(diccionario)
+    #df["times"].to_csv("time.csv",sep="_") 
+    #print(diccionario.keys())
+    #print(df["times"].to_dict())
+
 def promOpenClose(firesInHistory: pd.DataFrame):
     '''Promedia el tiempo entre que se abre y cierra un reporte'''
-    tiempoProm = []
+    cicloDeVida = []
     df = firesInHistory
-    df["timestamp_open"]=pd.to_datetime(df["timestamp_open"])
-    df["timestamp_close"]=pd.to_datetime(df["timestamp_close"])
+    df["timestamp_open"] = pd.to_datetime(df["timestamp_open"])
+    df["timestamp_close"] = pd.to_datetime(df["timestamp_close"])
     for open, close in zip(df["timestamp_open"], df["timestamp_close"]):
         time = close - open
-        tiempoProm.append(time)
-    tiempoProm = pd.Series(tiempoProm)
-    promedio = tiempoProm.mean()
-    strPromedio = str(promedio)
-    strPromedio = strPromedio.split(".")
-    print(f"El tiempo promedio entre apertura y cierre es de {strPromedio[0]}\n")
+        cicloDeVida.append(time)
+    cicloDeVida = pd.Series(cicloDeVida)
+    promedio = cicloDeVida.mean()
+    horas, rem = divmod (promedio.total_seconds(), 3600)
+    minutos, segundos = divmod(rem, 60)
+    time_str = '{:02.0f}:{:02.0f}:{:02.0f}'.format(horas, minutos, segundos)
+
+    print(f"El tiempo promedio entre apertura y cierre es de {time_str}\n")
 
 def reportDispatcher():
     '''Muestra los reportes que han sido despachados (JSON Uruguay)'''
@@ -93,6 +120,7 @@ def reportDispatcher():
                 print(f"Reportes que no son de despacho: {valor}.")
             else :
                 print(f"Reportes sin información: {valor}.")
+    #print (df.json_sended)
 
 def reportForOperator():
     '''Reportes agrupados por operador.'''
@@ -114,19 +142,20 @@ def poolForDispatcher(firesInHistory : pd.DataFrame):
     print(f"Lista de historial por despachador\n{agrupado.id}\n")
 
 
-# monitor()
+#monitor()
 dfFireInHistory, countFireInHistory = fireInHistory()
 dfFireNotInHistory, countFireNotInHistory = firesNotInHistory()
 dfHistoryNotInFire, countHistoryNotInFire = historyNotInFires()
 
-print (f"La cantidad de fuegos con historial es de {countFireInHistory}.")
-print(f"La cantidad de fuegos sin historial es de {countFireNotInHistory}.")
-print(f"La cantidad de Historial sin fuegos es de {countHistoryNotInFire}.\n")
-reportNotInternalId()
-promOpenClose(dfFireInHistory)
-reportDispatcher()
-msjPromedio(dfFireInHistory)
+# print (f"La cantidad de fuegos con historial es de {countFireInHistory}.")
+# print(f"La cantidad de fuegos sin historial es de {countFireNotInHistory}.")
+# print(f"La cantidad de Historial sin fuegos es de {countHistoryNotInFire}.\n")
+# reportNotInternalId()
+promReactionOpen(dfFireInHistory)
+# promOpenClose(dfFireInHistory)
+#reportDispatcher()
+# msjPromedio(dfFireInHistory)
 
-reportBank(dfFireInHistory, dfFireNotInHistory)
-reportForOperator()
-poolForDispatcher(dfFireInHistory)
+# reportBank(dfFireInHistory, dfFireNotInHistory)
+# reportForOperator()
+# poolForDispatcher(dfFireInHistory)
