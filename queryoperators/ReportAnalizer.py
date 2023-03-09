@@ -2,7 +2,7 @@ import re
 import pandas as pd
 import json
 from datetime import datetime
-from sendData import exportar
+from Uploader import exportar
 
 dfDescription = pd.DataFrame(columns=['Description'])
 dfData = pd.DataFrame(columns=['Valor', 'Total', 'Porcentaje'],
@@ -209,18 +209,3 @@ def takeTime():
 #monitor()
 date = takeTime()
 
-dfFireInHistory = fireInHistory()
-dfFireNotInHistory = firesNotInHistory()
-dfHistoryNotInFire = historyNotInFires()
-
-reportNotInternalId()
-promReactionOpen(dfFireInHistory)
-promOpenClose(dfFireInHistory)
-reportDispatcher()
-msjPromedio(dfFireInHistory)
-
-reportBank(dfFireInHistory, dfFireNotInHistory)
-reportForOperator()
-poolForDispatcher(dfFireInHistory)
-
-exportar(dfDescription, dfData, 1, date)

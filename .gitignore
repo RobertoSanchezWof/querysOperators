@@ -4,3 +4,6 @@ fires.csv
 history.csv
 fires_respaldo.csv
 history_respaldo.csv
+**__pycache__**
+**.ipynb_checkpoints**
+**.vscode**
