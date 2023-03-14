@@ -1,49 +1,51 @@
 print("Ejecutando Queryoperators!")
+
 from Downloader import DownloadData
 from ReportAnalizer import *
 from Uploader import exportar
-def on_message(ws, message):
-    print(message)
-def on_error(ws, error):
-    print(error)
-def on_close(ws):
-    print("### closed ###")
 
 def main():
-    # Descarga los datos    
+    # Consulta si desea descargar los datos
     download = input("¿Desea descargar los datos?(y/n)[n]:")
     if download == "y":
         DownloadData(save=True)
         print("Datos descargados correctamente.")
-        #Desea analizar los datos
     else:
         print("Datos no descargados.")
+    # Consulta si desea analizar los datos
     analize = input("¿Desea analizar los datos?(y/n)[y]: ")
     if analize == "y" or analize == "":
-        # Analiza los datos
-        dfFireInHistory = fireInHistory()
-        dfFireNotInHistory = firesNotInHistory()
-        dfHistoryNotInFire = historyNotInFires()
+        dfFires = pd.read_csv("data/fires.csv",sep="_")
+        dfHistory = pd.read_csv("data/history.csv",sep="_")
+        # Analisis unitarios
+        [dfFiresWithReport,perFiresWithReport,dfFiresWithoutReport,dfReportsWithoutFire] = FiresReportsMerge(dfFires, dfHistory)
+        print("Fuegos con reporte: ", dfFiresWithReport.shape[0])
+        print("En porcentaje: ", perFiresWithReport)
+        print("Fuegos sin reporte: ", dfFiresWithoutReport.shape[0])
+        # dfFireNotInHistory = firesNotInHistory()
+        # dfHistoryNotInFire = historyNotInFires()
+        
+        # Analisis de reportes
+        [countRWOID,totalCountRWOID,perCountRWOID] =  CountReportsWithoutInternalID(dfFiresWithReport)
+        PromReportTime(dfFiresWithoutReport)
+        # promOpenClose(dfFireInHistory)
+        # reportDispatcher()
+        # msjPromedio(dfFireInHistory)
 
-        reportNotInternalId()
-        promReactionOpen(dfFireInHistory)
-        promOpenClose(dfFireInHistory)
-        reportDispatcher()
-        msjPromedio(dfFireInHistory)
-
-        reportBank(dfFireInHistory, dfFireNotInHistory)
-        reportForOperator()
-        poolForDispatcher(dfFireInHistory)
-
-        exportar(dfDescription, dfData, 1, date)
-        print("Datos analizados correctamente.")
+        # # Analisis de personal.
+        # reportBank(dfFireInHistory, dfFireNotInHistory)
+        # reportForOperator()
+        # poolForDispatcher(dfFireInHistory)
+        # print("Datos analizados correctamente.")
     else:
         print("Datos no analizados.")
     #Desea exportar los datos
     export = input("¿Desea exportar los datos?(y/n)[n]: ")
     if export == "y":
-        exportar()
+        exportar(dfDescription, dfData, 1, date)
         print("Datos exportados correctamente.")
+    else:
+        print("Datos no exportados")
 
 if __name__ == "__main__":
     main()

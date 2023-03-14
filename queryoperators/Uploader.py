@@ -1,7 +1,7 @@
 import gspread
 import gspread.utils as gsutils
 import pandas as pd
-
+import os
 def credenciales ():
     """
     ## Descripción:
@@ -9,7 +9,9 @@ def credenciales ():
     Returns:
         hoja_excel: URL de documento google sheets 
     """
-    gc = gspread.service_account(filename='C:\proyectos\querysOperators\credenciales\credentials.json')
+    path = os.path.join(os.path.expanduser('~'), ".auth", "wof_googlesheets_key.json")
+    print(path)
+    gc = gspread.service_account(filename=path)
     hoja_excel = gc.open_by_url('https://docs.google.com/spreadsheets/d/1vhKqsudLV-iyIbL8GReUOqi02tj16LUZmvGc3o0C5lE/edit#gid=0')
     return hoja_excel
 

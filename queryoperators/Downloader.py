@@ -11,10 +11,12 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 import pandas as pd
+import os
 
 def DownloadData(save: bool = False):
+    path = path.join(os.path.expanduser('~'), ".auth", "credentials.json")
     # Inicializamos la conexión con la base de datos
-    cred = credentials.Certificate('./credenciales/firebase.json')
+    cred = credentials.Certificate(path)
     firebase_admin.initialize_app (cred)
     db : firestore.firestore.Client = firestore.client()
 

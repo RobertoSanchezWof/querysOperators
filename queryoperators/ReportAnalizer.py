@@ -8,57 +8,36 @@ dfDescription = pd.DataFrame(columns=['Description'])
 dfData = pd.DataFrame(columns=['Valor', 'Total', 'Porcentaje'],
                     data=[['Valor', 'Total','porcentaje']])
 
-def monitor():
-    '''Imprime 20 filas del merge'''
-    df = pd.read_csv("data/merge.csv", sep="_")
-    for x in list(df.columns):
-        print(df[x].head(20))
-
-def merge():
+def LeftMerge(dfFires, dfReports) -> pd.DataFrame:
     '''Une la data de Fire y History por el ID del incendio, lo guarda como CSV'''
-    fire = pd.read_csv("fires.csv", sep="_")
-    history = pd.read_csv("history.csv", sep="_")
-    dfMerge = pd.merge(fire, history, how='left', left_on='id', right_on='fire', indicator=True)
-    dfMerge.to_csv("data/merge.csv", sep="_")
-    print(dfMerge)
+    return pd.merge(dfFires, dfReports, how='left', left_on='id', right_on='fire', indicator=True)
 
-def firesNotInHistory():
-    '''Devuelve los datos que no posean registro.'''
-    df = pd.read_csv("data/merge.csv", sep="_")
-    total = len(df)
-    df = df[df['_merge'] == 'left_only']
-    casosPresentados = df.shape[0]
-    porcentaje = (casosPresentados/total)*100
-    string = '{:.2f}%'.format(porcentaje)
-    dfData.loc[len(dfData)] = [casosPresentados, total, string]
-    dfDescription.loc[len(dfDescription)] = ["Fuegos sin Reporte"]
-    return df
+def FiresReportsMerge(dfFires,dfReports) -> tuple[pd.DataFrame, int, pd.DataFrame, pd.DataFrame]:
+    """ Ejecuta un left join entre los datos de fuegos y reportes
 
-def historyNotInFires():
-    '''Devuelve los datos que no poseen incendios.'''
-    df = pd.read_csv("data/merge.csv", sep="_")
-    total = len(df)
-    df = df[df['_merge'] == 'right_only']
-    casosPresentados = df.shape[0]
-    porcentaje = (casosPresentados/total)*100
-    string = '{:.2f}%'.format(porcentaje)
-    dfData.loc[len(dfData)] = [casosPresentados, total, string]
-    dfDescription.loc[len(dfDescription)] = ["Reportes sin fuegos"]
-    return df
+        Returns:
+            df: DataFrame con los datos de fuegos y reportes
+            per: Porcentaje de fuegos con reporte
+            dfOnlyLeft: DataFrame con los datos de fuegos sin reporte
+            dfOnlyRight: DataFrame con los datos de reportes sin fuego
+    """
+    # Mescla los datos de fuegos y reportes
+    df = LeftMerge(dfFires, dfReports)
+    # Obtenemos los fuegos con reporte
+    dfBoth = df[df['_merge'] == "both"]
+    # Obtenemos los fuegos sin reporte
+    dfOnlyLeft = df[df['_merge'] == "left_only"]
+    # Obtenemos los reportes sin fuego, caso especial. Esto quiere decir que el fuego quedo fuera del rango de tiempo.
+    dfOnlyRight = df[df['_merge'] == "right_only"]
+    
+    total = dfBoth.shape[0] + dfOnlyLeft.shape[0]
+    per = (dfBoth.shape[0]/(total))*100
+    string = '{:.2f}%'.format(per)
+    # dfData.loc[len(dfData)] = [casosPresentados, total, string]
+    # dfDescription.loc[len(dfDescription)] = ["Fuegos con Reporte"]
+    return dfBoth, per, dfOnlyLeft, dfOnlyRight
 
-def fireInHistory():
-    '''Devuelve los incendios que si poseen reporte.'''
-    df = pd.read_csv("data/merge.csv", sep="_")
-    total = len(df)
-    df = df[df['_merge'] == "both"]
-    casosPresentados = df.shape[0]
-    porcentaje = (casosPresentados/total)*100
-    string = '{:.2f}%'.format(porcentaje)
-    dfData.loc[len(dfData)] = [casosPresentados, total, string]
-    dfDescription.loc[len(dfDescription)] = ["Fuegos con Reporte"]
-    return df 
-
-def reportBank(firesInHistory: pd.DataFrame, firesNotInHistory: pd.DataFrame):
+def ReportBank(firesInHistory: pd.DataFrame, firesNotInHistory: pd.DataFrame):
     '''Entrega la información de los incendios y reportes agrupados por banco'''
     listData = []
     
@@ -106,9 +85,6 @@ def msjPromedio(firesInHistory: pd.DataFrame):
     dfDescription.loc[len(dfDescription)] = ["Mensajes promedio por reporte"]
     dfData.loc[len(dfData)] = [promedio, None, None]
 
-# Funcion para extraer los numeros de la variable "time" usando regex.
-# Ej:
-# {'system_detection': False, 'ti2023, 2, 1, 0, 41, 'time': DatetimeWithNanoseconds(2023, 2, 1, 0, 41, 48, tzinfo=datetime.timezone.utc), 'log_time': DatetimeWithNanoseconds(2023, 2, 1, 0, 42, 4, tzinfo=datetime.timezone.utc), 'online_time': DatetimeWithNanoseconds(2023, 2, 1, 0, 42, 11, 887204, tzinfo=datetime.timezone.utc), 'atime': DatetimeWithNanoseconds(2023, 2, 1, 0, 40, 8, tzinfo=datetime.timezone.utc)}
 def time(x):
     results = re.findall(r"'time': DatetimeWithNanoseconds\((.*?), tzinfo=datetime.timezone.utc\)", x)
     # results = [datetime.strptime(x, '%Y, %m, %d, %H, %M, %S') for x in results]
@@ -121,9 +97,8 @@ def time(x):
         fechaConvertida = datetime.strptime(fecha, '%Y, %m, %d, %H, %M')
     return fechaConvertida
 
-def promReactionOpen(firesInHistory: pd.DataFrame):
-    """promedia el tiempo de reacción entre detección y apertura """
-    df = firesInHistory
+def PromReportTime(df: pd.DataFrame):
+    """Promedia el tiempo de reacción entre detección y apertura """
     promTimes = []
     for index, row in df.iterrows():
         dateFire = time (row["times"])
@@ -137,8 +112,9 @@ def promReactionOpen(firesInHistory: pd.DataFrame):
     minutos, segundos = divmod(rem, 60)
     time_str = '{:02.0f}:{:02.0f}:{:02.0f}'.format(horas, minutos, segundos)
     df['reaction_time'] = df['reaction_time'].astype(str)
-    dfData.loc[len(dfData)] = [time_str, None, None]
-    dfDescription.loc[len(dfDescription)] = ["Tiempo promedio de reacción a incendios"]
+    
+    #dfData.loc[len(dfData)] = [time_str, None, None]
+    #dfDescription.loc[len(dfDescription)] = ["Tiempo promedio de reacción a incendios"]
 
 def promOpenClose(firesInHistory: pd.DataFrame):
     '''Promedia el tiempo entre que se abre y cierra un reporte'''
@@ -175,15 +151,14 @@ def reportForOperator():
     newDataFrame = pd.concat([newData, newDataFrame], ignore_index=True)
     exportar(dfText, newDataFrame, 3, date) 
 
-def reportNotInternalId():
+def CountReportsWithoutInternalID(df : pd.DataFrame) -> tuple[int, int, float]:
     '''Numero de reportes sin ID interno'''
-    df = pd.read_csv("data/merge.csv", sep="_")
-    total = len(df)
+    total = df.size[0]
     count = df["internal_id"].isna().sum()
     porcentaje = (count/total)*100
-    string = '{:.2f}%'.format(porcentaje)
-    dfData.loc[len(dfData)] = [count, total, string]
-    dfDescription.loc[len(dfDescription)] = ["Reportes sin Id interno"]
+    return count, total, porcentaje    
+    #dfData.loc[len(dfData)] = [count, total, string]
+    #dfDescription.loc[len(dfDescription)] = ["Reportes sin Id interno"]
 
 def poolForDispatcher(firesInHistory : pd.DataFrame):
     '''Numero de reportes por despachador.'''
@@ -204,7 +179,7 @@ def takeTime():
     open = open.min().date().strftime("%d/%m")
     close = close.max().date().strftime("%d/%m")
     date = "Periodos: " + open + " - " + close
-    return (date)
+    return date
 
 #monitor()
 date = takeTime()
