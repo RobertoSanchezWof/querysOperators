@@ -6,7 +6,7 @@ Proyecto destinado a procesar las detecciones de incendio junto a su reporte ane
 
 - La data a tomar empieza entre el 1 de febrero y la fecha actual.
 - La data queda almacenada en CSV para no requerir mas consultas en posteriores ejecuciones.
-- Entry Point o punto de ejecución: conexion.py
+- Entry Point o punto de ejecución: __main__.py
 - Se requieren credenciales para extraer la data de Firebase. Un archivo JSON que debe vivir en una carpeta llamada credenciales
 
 ## Instrucciones de uso
@@ -21,4 +21,4 @@ Proyecto destinado a procesar las detecciones de incendio junto a su reporte ane
 >
 > 3.  Ejecutar consulas y analisis
 >
-> > Ejecutar leercsv.py
+> > Ejecutar python queryoperators.py
