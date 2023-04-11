@@ -91,13 +91,15 @@ def Export(dataID, page:int, row:int,excelSheet, data):
     if isinstance(dataID, pd.DataFrame) and isinstance(data, pd.DataFrame):
         #si no hay nada ingresa al inicio de la hoja de trabajo
         if flag:
+            #si no hay nada ingresa al inicio de la hoja de trabajo
             worksheetPage.update('A3', dataID.values.tolist())
             worksheetPage.update('B2', data.values.tolist())
         else:
+            # si hay datos en la hoja de trabajo, inserta los datos a partir de la ultima columna
             col = len(worksheetPage.row_values(3)) + 1
             rowCategory = gsutils.rowcol_to_a1(row, col)
             worksheetPage.update(rowCategory , data.values.tolist())
-    else: #si no es dataframe
+    else: #si no es dataframe repite los mismos pasos pero para datos únicos
         if flag:
             position = gsutils.rowcol_to_a1(row, 1)
             worksheetPage.update(position, dataID)

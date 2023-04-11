@@ -17,9 +17,12 @@ def FiresReportsMerge(dfFires,dfReports) -> tuple[pd.DataFrame, int, pd.DataFram
 
         Returns:
             df: DataFrame con los datos de fuegos y reportes
-            per: Porcentaje de fuegos con reporte
+            perBoth: Porcentaje de fuegos con reporte
             dfOnlyLeft: DataFrame con los datos de fuegos sin reporte
+            perLeft: Porcentaje de fuegos sin reporte
             dfOnlyRight: DataFrame con los datos de reportes sin fuego
+            perRight: Porcentaje de fuegos sin reporte
+            all: todos los datos juntos (fuegos y reportes)
     """
     # Mescla los datos de fuegos y reportes
     df = LeftMerge(dfFires, dfReports)
@@ -47,7 +50,7 @@ def GroupByBank(firesInHistory: pd.DataFrame, firesNotInHistory: pd.DataFrame) -
     '''Entrega la información de los incendios y reportes agrupados por banco'''
     withReport = firesInHistory
     noReport = firesNotInHistory
-    
+    #cambia caracter ' por " para poder convertir el string en un diccionario
     systemList = [x.replace("'", "\"") for x in withReport["system"].tolist()]
     dictionary = {i: json.loads(x) for i, x in enumerate(systemList)}
     dfName = pd.DataFrame.from_dict(dictionary, orient="index")
@@ -56,13 +59,14 @@ def GroupByBank(firesInHistory: pd.DataFrame, firesNotInHistory: pd.DataFrame) -
     dictionaryNotReport = {i: json.loads(x) for i, x in enumerate(systemListNoReport)}
     dfNameNotReport = pd.DataFrame.from_dict(dictionaryNotReport, orient="index")
     
+    #Elimina las columnas que no se necesitan y agrupa por nombre del banco
     countsIn = dfName.groupby('system_name').count().drop(columns=['version', 
                                                                     'utc_minute_offset',
                                                                     'utc_offset']).rename(columns={'api_key': 'Reportados'})
     countsNotIn = dfNameNotReport.groupby('system_name').count().drop(columns=['version', 
                                                                                 'utc_minute_offset',
                                                                                 'utc_offset']).rename(columns={'api_key': 'No Reportados'})
-    
+    #Mergea los dos dataframes para tener un solo dataframe con los valores de reportados y no reportados
     df = pd.merge(countsIn, countsNotIn, left_on='system_name', right_on='system_name', how='outer')   
     #elimina los decimales de los valores
     df = df.fillna(0).astype(int)
@@ -94,6 +98,7 @@ def AverageMessageCount(df: pd.DataFrame) -> float:
     return average
 
 def time(x):
+    """Extrae el tiempo de la columna times"""
     results = re.findall(r"'time': DatetimeWithNanoseconds\((.*?), tzinfo=datetime.timezone.utc\)", x)
     # results = [datetime.strptime(x, '%Y, %m, %d, %H, %M, %S') for x in results]
     date = results[0]
@@ -109,10 +114,13 @@ def AverageReportActionTimes(df: pd.DataFrame) -> str:
     """Promedia el tiempo de reacción entre detección y apertura """
     promTimes = []
     for index, row in df.iterrows():
+        #extrae la fecha de detección del fuego
         dateFire = time (row["times"])
+        #extrae la fecha de apertura del reporte
         openTime = pd.to_datetime(row['timestamp_open']).to_pydatetime().replace(tzinfo=None)
         times = openTime - dateFire
         promTimes.append(times)
+    #inserta el promedio de cada caso en una nueva columna
     df.insert(len(df.columns), "reaction_time", promTimes)
     promTimes = pd.Series(promTimes)
     average = promTimes.mean()
@@ -144,8 +152,6 @@ def UruguayDispatchedReports(df: pd.DataFrame) -> int:
     dfUruguay = df.loc[(df["client_x"] == "SPF") & (df["json_sended"].notnull())]
     count = len(dfUruguay)
     return count
-    dfDescription.loc[len(dfDescription)] = ["Reportes despachados para Uruguay"]
-    dfData.loc[len(dfData)] = [len(dfUruguay), None, None]
 
 def GroupByOperators(df:pd.DataFrame) ->pd.DataFrame:
     '''Reportes agrupados por operador.'''
@@ -156,7 +162,6 @@ def GroupByOperators(df:pd.DataFrame) ->pd.DataFrame:
     newData = pd.DataFrame({'N° Reportes': ['N° Reportes']})
     newDataFrame = pd.concat([newData, newDataFrame], ignore_index=True)
     return dfText, newDataFrame
-    #exportar(dfText, newDataFrame, 3, date) 
 
 def CountReportsWithoutInternalID(df : pd.DataFrame) -> tuple[int, int, float]:
     '''Numero de reportes sin ID interno'''
@@ -188,6 +193,3 @@ def ExtractStartEndDate(df: pd.DataFrame) -> str:
     close = close.max().date().strftime("%d/%m")
     date = "Periodos: " + open + " - " + close
     return date
-
-#monitor()
-
